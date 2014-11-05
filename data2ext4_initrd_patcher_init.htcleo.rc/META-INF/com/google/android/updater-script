@@ -1,0 +1,52 @@
+ui_print("Patching kernel to use mmcblk0p2 as /data");
+ui_print("based on ph03n!x's Native Mount DataOnEXT");
+ui_print("");
+show_progress(0.1, 5);
+package_extract_file("nfo.prop","/tmp/nfo.prop");
+show_progress(0.2, 10);
+ui_print("Extracting installation tools");
+package_extract_dir("tools","/tmp/tools");
+set_perm(0,0, 0777, "/tmp/tools/dcp.sh");
+set_perm(0,0, 0777, "/tmp/tools/checksys.sh");
+set_perm(0,0, 0777, "/tmp/tools/extprep");
+set_perm(0,0, 0777, "/tmp/tools/zip");
+show_progress(0.4, 10);
+ui_print("Checking system...");
+mount("MTD","system","/system");
+run_program("/tmp/tools/checksys.sh");
+if file_getprop("/tmp/nfo.prop","clk") == "true" ||
+   file_getprop("/tmp/nfo.prop","clk") == "null" 
+then 
+	if file_getprop("/tmp/nfo.prop","clk") == "true"
+	then
+		ui_print("cLK detected...");
+		set_perm(0,0, 0777, "/tmp/tools/clk_install.sh");
+		set_perm(0,0, 0777, "/tmp/tools/dump_image");
+		set_perm(0,0, 0777, "/tmp/tools/flash_image");
+		set_perm(0,0, 0777, "/tmp/tools/mkbootimg");
+		set_perm(0,0, 0777, "/tmp/tools/unpackbootimg");
+		assert(run_program("/tmp/tools/clk_install.sh"),
+				ui_print("Patching operation finished"),
+				show_progress(0.4, 150),
+				ui_print("Copying /data files to /sd-ext"),
+				mount("MTD","userdata","/data"),
+				run_program("/tmp/tools/dcp.sh"),
+				unmount("/data"),
+				ui_print("Data copying operation finished"));
+	else
+		ui_print("Magldr detected...");
+		set_perm(0,0, 0777, "/tmp/tools/magldr_install.sh");
+		mount("MTD","boot","/boot");
+		assert(run_program("/tmp/tools/magldr_install.sh"),
+				ui_print("Patching operation finished"),
+				show_progress(0.4, 150),
+				ui_print("Copying /data files to /sd-ext"),
+				mount("MTD","userdata","/data"),
+				run_program("/tmp/tools/dcp.sh"),
+				unmount("/data"),
+				ui_print("Data copying operation finished"));
+		unmount("/boot");
+    endif;
+endif;
+unmount("/system");
+delete_recursive("/tmp/tools");

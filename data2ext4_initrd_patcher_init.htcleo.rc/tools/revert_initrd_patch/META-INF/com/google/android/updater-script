@@ -1,0 +1,46 @@
+ui_print("Reverting kernel patch for DataOnEXT");
+ui_print("");
+show_progress(0.1, 5);
+package_extract_file("nfo.prop","/tmp/nfo.prop");
+show_progress(0.2, 10);
+ui_print("Extracting installation tools");
+package_extract_dir("tools","/tmp/tools");
+set_perm(0,0, 0777, "/tmp/tools/drm.sh");
+set_perm(0,0, 0777, "/tmp/tools/checksys.sh");
+show_progress(0.4, 10);
+ui_print("Checking system...");
+mount("MTD","system","/system");
+run_program("/tmp/tools/checksys.sh");
+if file_getprop("/tmp/nfo.prop","clk") == "true" ||
+   file_getprop("/tmp/nfo.prop","clk") == "null" 
+then 
+	if file_getprop("/tmp/nfo.prop","clk") == "true"
+	then
+		ui_print("cLK detected...");
+		set_perm(0,0, 0777, "/tmp/tools/clk_restore.sh");
+		set_perm(0,0, 0777, "/tmp/tools/dump_image");
+		set_perm(0,0, 0777, "/tmp/tools/flash_image");
+		set_perm(0,0, 0777, "/tmp/tools/mkbootimg");
+		set_perm(0,0, 0777, "/tmp/tools/unpackbootimg");
+		assert(run_program("/tmp/tools/clk_restore.sh"),
+				ui_print("Kernel restored"),
+				show_progress(0.2, 10),
+				ui_print("Cleaning up /sd-ext"),
+				run_program("/tmp/tools/drm.sh"),
+				ui_print("Operation finished"));
+	else
+		ui_print("Magldr detected...");
+		set_perm(0,0, 0777, "/tmp/tools/magldr_restore.sh");
+		mount("MTD","boot","/boot");
+		ui_print("Restoring MAGLDR kernel...");
+		assert(run_program("/tmp/tools/magldr_restore.sh"),
+				ui_print("Kernel restored"),
+				show_progress(0.2, 10),
+				ui_print("Cleaning up /sd-ext"),
+				run_program("/tmp/tools/drm.sh"),
+				ui_print("Operation finished"));
+		unmount("/boot");
+    endif;
+endif;
+unmount("/system");
+delete_recursive("/tmp/tools");

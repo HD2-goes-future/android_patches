@@ -1,0 +1,18 @@
+#!/system/bin/sh
+# Wait for 5 seconds, scan EXT for errors, SD Card Speed Fix
+
+sleep 5;
+
+# Check EXT partition for errors, save log in /system/fsck.log
+/system/bin/e2fsck -p /dev/block/mmcblk0p2 > /system/fsck.log
+if [[ $? -eq 2 ]]
+	then /system/bin/reboot
+fi;
+
+# SD Card Speed Fix
+if [ -e /sys/devices/virtual/bdi/179:0/read_ahead_kb ]
+then
+  /system/xbin/echo "2048" > /sys/devices/virtual/bdi/179:0/read_ahead_kb;
+fi;
+
+exit;
