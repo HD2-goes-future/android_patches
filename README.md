@@ -5,4 +5,5 @@ collection of patches for the hd2
 - ril
 - audio
 - video
+- metadata
 - .....
